@@ -5,7 +5,7 @@ import {
   useWallet as useSolanaWallet,
 } from "@solana/wallet-adapter-react";
 import { getProgram, RPC_URL } from "@/lib/solana";
-import { Program } from "@coral-xyz/anchor";
+import type { Program } from "@coral-xyz/anchor";
 
 interface WalletContextValue {
   publicKey: string | null;

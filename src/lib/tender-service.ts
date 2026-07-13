@@ -6,7 +6,7 @@
 // NOT part of the on-chain program. They're kept in localStorage exactly like
 // before, purely for display — they never touch the chain.
 
-import { Program } from "@coral-xyz/anchor";
+import type { Program } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
 import {
   BN,
