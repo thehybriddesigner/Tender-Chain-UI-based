@@ -3,9 +3,12 @@
 // instance that tender-service.ts uses to make real on-chain calls.
 
 import { Connection, PublicKey, SystemProgram, clusterApiUrl } from "@solana/web3.js";
-import { AnchorProvider, BN, Program } from "@coral-xyz/anchor";
+import * as anchor from "@coral-xyz/anchor";
+import type { Program } from "@coral-xyz/anchor";
 import type { Wallet } from "@coral-xyz/anchor/dist/cjs/provider";
 import idl from "./tender_tracker.json"; // <-- paste the real IDL file here, same folder
+
+const { AnchorProvider, BN, Program: AnchorProgram } = anchor;
 
 export const PROGRAM_ID = new PublicKey(idl.address);
 
@@ -75,7 +78,7 @@ export function getProgram(wallet: Wallet, sendTransaction?: any): Program {
         }
       : {}),
   } as any);
-  return new Program(idl as any, provider);
+  return new AnchorProgram(idl as any, provider) as Program;
 }
 
 // ---- Fetch all Bid accounts for a given tender (for finalize_tender) -------

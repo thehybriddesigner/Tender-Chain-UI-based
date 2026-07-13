@@ -5,7 +5,8 @@ import {
   useWallet as useSolanaWallet,
 } from "@solana/wallet-adapter-react";
 import { getProgram, RPC_URL } from "@/lib/solana";
-import { Program } from "@coral-xyz/anchor";
+import type { Program } from "@coral-xyz/anchor";
+import type { WalletAdapter, WalletName } from "@solana/wallet-adapter-base";
 
 interface WalletContextValue {
   publicKey: string | null;
@@ -21,10 +22,28 @@ interface WalletContextValue {
 const WalletContext = React.createContext<WalletContextValue | null>(null);
 const ROLE_KEY = "tenderchain::role::v1";
 
+type WalletOption = { adapter: { name: WalletName } };
+type PendingConnect = {
+  walletName: WalletName;
+  resolve: (publicKey: string) => void;
+  reject: (error: unknown) => void;
+};
+
+function getPreferredWalletName(wallets: WalletOption[]): WalletName | null {
+  return (
+    wallets.find((wallet) => wallet.adapter.name === "Phantom")?.adapter.name ??
+    wallets.find((wallet) => wallet.adapter.name.toString().toLowerCase().includes("phantom"))
+      ?.adapter.name ??
+    wallets[0]?.adapter.name ??
+    null
+  );
+}
+
 function InnerWalletBridge({ children }: { children: React.ReactNode }) {
   const solanaWallet = useSolanaWallet();
   const [role, setRole] = React.useState<"authority" | "bidder" | null>(null);
   const [bidderName, setBidderName] = React.useState<string | null>(null);
+  const [pendingConnect, setPendingConnect] = React.useState<PendingConnect | null>(null);
 
   React.useEffect(() => {
     const raw = localStorage.getItem(ROLE_KEY);
@@ -35,19 +54,43 @@ function InnerWalletBridge({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  // Pre-select the first detected wallet as soon as it's available — BEFORE
-  // the user clicks Connect. select() itself does not open any wallet popup,
-  // so doing this early (not inside a click handler) is safe. This means by
-  // the time the user actually clicks Connect, `solanaWallet.wallet` is
-  // already populated, so the click handler can call the provider's own
-  // `solanaWallet.connect()` directly — keeping the provider's internal
-  // state (connected/publicKey) properly in sync, unlike calling the raw
-  // adapter's connect() directly which bypasses that sync.
   React.useEffect(() => {
-    if (!solanaWallet.wallet && solanaWallet.wallets.length > 0) {
-      solanaWallet.select(solanaWallet.wallets[0].adapter.name);
+    const preferredWalletName = getPreferredWalletName(solanaWallet.wallets);
+    if (
+      preferredWalletName &&
+      solanaWallet.wallet?.adapter.name !== preferredWalletName
+    ) {
+      solanaWallet.select(preferredWalletName);
     }
-  }, [solanaWallet.wallet, solanaWallet.wallets, solanaWallet]);
+  }, [solanaWallet.wallet, solanaWallet.wallets, solanaWallet.select]);
+
+  React.useEffect(() => {
+    if (!pendingConnect) return;
+    if (solanaWallet.wallet?.adapter.name !== pendingConnect.walletName) return;
+
+    let cancelled = false;
+    solanaWallet
+      .connect()
+      .then(() => {
+        if (cancelled) return;
+        pendingConnect.resolve(solanaWallet.publicKey?.toBase58() ?? "");
+        setPendingConnect(null);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        pendingConnect.reject(error);
+        setPendingConnect(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    pendingConnect,
+    solanaWallet.connect,
+    solanaWallet.publicKey,
+    solanaWallet.wallet?.adapter.name,
+  ]);
 
   // Passing sendTransaction through lets getProgram use Phantom's fast
   // signAndSendTransaction path instead of the slow signTransaction+manual
@@ -75,17 +118,17 @@ function InnerWalletBridge({ children }: { children: React.ReactNode }) {
       setRole(r);
       setBidderName(displayName ?? null);
 
-      if (!solanaWallet.wallet) {
-        return Promise.reject(
-          new Error("Wallet not ready yet — please try again in a moment, or install Phantom.")
-        );
+      const walletName = getPreferredWalletName(solanaWallet.wallets);
+      if (!walletName) {
+        throw new Error("Wallet not ready yet — please try again in a moment, or install Phantom.");
+      }
+      if (solanaWallet.wallet?.adapter.name !== walletName) {
+        solanaWallet.select(walletName);
       }
 
-      // Calling the PROVIDER's own connect() (not the raw adapter directly)
-      // keeps solanaWallet.connected/publicKey properly in sync.
-      return solanaWallet
-        .connect()
-        .then(() => solanaWallet.publicKey?.toBase58() ?? "");
+      return new Promise((resolve, reject) => {
+        setPendingConnect({ walletName, resolve, reject });
+      });
     },
     [solanaWallet]
   );
@@ -111,9 +154,25 @@ function InnerWalletBridge({ children }: { children: React.ReactNode }) {
 }
 
 export function WalletProvider({ children }: { children: React.ReactNode }) {
+  const [wallets, setWallets] = React.useState<WalletAdapter[]>([]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+    import("@solana/wallet-adapter-wallets").then(
+      ({ PhantomWalletAdapter, SolflareWalletAdapter }) => {
+        if (!cancelled) {
+          setWallets([new PhantomWalletAdapter(), new SolflareWalletAdapter()]);
+        }
+      }
+    );
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <ConnectionProvider endpoint={RPC_URL}>
-      <SolanaWalletProvider wallets={[]} autoConnect={false}>
+      <SolanaWalletProvider wallets={wallets} autoConnect={false}>
         <InnerWalletBridge>{children}</InnerWalletBridge>
       </SolanaWalletProvider>
     </ConnectionProvider>
