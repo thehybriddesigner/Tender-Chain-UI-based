@@ -79,26 +79,6 @@ function SubmitBidPage() {
     );
   }
 
-  if (!data || !data.tender) {
-    return (
-      <div className="mx-auto max-w-md py-24 text-center">
-        <h1 className="text-2xl font-semibold">Tender not found</h1>
-        <Button asChild className="mt-6" variant="outline">
-          <Link to="/tenders">Back to all tenders</Link>
-        </Button>
-      </div>
-    );
-  }
-
-  const { tender, meta } = data;
-
-  console.log("[bid-page] wallet gate check", {
-    connected: wallet.connected,
-    publicKey: wallet.publicKey,
-    hasProgram: !!wallet.program,
-    willShowConnectScreen: !wallet.connected || !wallet.publicKey || !wallet.program,
-  });
-
   if (!wallet.connected || !wallet.publicKey || !wallet.program) {
     return (
       <div className="mx-auto flex min-h-[60vh] max-w-md flex-col items-center justify-center px-4 text-center">
@@ -117,35 +97,45 @@ function SubmitBidPage() {
     );
   }
 
+  if (!data || !data.tender) {
+    return (
+      <div className="mx-auto max-w-md py-24 text-center">
+        <h1 className="text-2xl font-semibold">Tender not found</h1>
+        <Button asChild className="mt-6" variant="outline">
+          <Link to="/tenders">Back to all tenders</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const { tender, meta } = data;
+  const biddingClosed = tender.status !== "Open" || Date.now() > tender.deadline;
+
   const submit = async () => {
-    console.log("[submit-bid] click received", {
-      tenderId,
-      priceNum,
-      daysNum,
-      qualityCert: form.qualityCert,
-      walletConnected: wallet.connected,
-      walletPublicKey: wallet.publicKey,
-      hasProgram: !!wallet.program,
-    });
+    if (biddingClosed) {
+      toast.error("Bidding has closed for this tender.");
+      return;
+    }
+    if (!canProceedInfo) {
+      toast.error("Enter a valid price and timeline before submitting.");
+      setStep("info");
+      return;
+    }
     setBusy(true);
     try {
-      console.log("[submit-bid] calling tenderService.submitBid…");
       const bid = await tenderService.submitBid(wallet.program!, new PublicKey(wallet.publicKey!), {
         tenderId,
         price: priceNum,
         timelineDays: daysNum,
         qualityCert: form.qualityCert,
       });
-      console.log("[submit-bid] success", bid);
       setSubmittedBid(bid);
       toast.success("Bid submitted on-chain", {
         description: "Your bid PDA is now visible to anyone with this wallet address.",
       });
     } catch (e) {
-      console.error("[submit-bid] FAILED — full error object:", e);
       toast.error(e instanceof Error ? e.message : "Submission failed");
     } finally {
-      console.log("[submit-bid] finally — clearing busy state");
       setBusy(false);
     }
   };
@@ -160,8 +150,6 @@ function SubmitBidPage() {
       />
     );
   }
-
-  console.log("[bid-page] rendering form", { step, stepIndex, canProceedInfo, busy });
 
   return (
     <div className="mx-auto w-full max-w-5xl px-4 py-8 sm:px-6">
@@ -378,24 +366,13 @@ function SubmitBidPage() {
               Back
             </Button>
             {step === "review" ? (
-              <Button
-                onClick={() => {
-                  console.log("Clicked from tenders.$rtenderId.bid");
-                  submit();
-                }}
-                disabled={busy}
-              >
-                {busy ? "Submitting…" : "Sign & submit bid"}
+              <Button type="button" onClick={submit} disabled={busy || biddingClosed}>
+                {busy ? "Submitting…" : biddingClosed ? "Bidding closed" : "Sign & submit bid"}
               </Button>
             ) : (
               <Button
-                onClick={() => {
-                  console.log(
-                    "[bid-page] Continue clicked, moving to step:",
-                    STEPS[stepIndex + 1].key,
-                  );
-                  setStep(STEPS[stepIndex + 1].key);
-                }}
+                type="button"
+                onClick={() => setStep(STEPS[stepIndex + 1].key)}
                 disabled={step === "info" && !canProceedInfo}
                 className="gap-1"
               >
