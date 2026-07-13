@@ -38,7 +38,7 @@ export function WalletButton() {
         description: `You are signed in as ${role === "authority" ? "an issuing authority" : "a bidder"}.`,
       });
     } catch (e) {
-      toast.error("Could not connect wallet");
+      toast.error(e instanceof Error ? e.message : "Could not connect wallet");
     }
   };
 
@@ -59,8 +59,8 @@ export function WalletButton() {
             <DialogHeader>
               <DialogTitle>Connect Wallet</DialogTitle>
               <DialogDescription>
-                TenderChain is on Solana Devnet. Choose the role you want to preview
-                as — the app will mint a session wallet for the demo.
+                TenderChain is on Solana Devnet. Choose your role, then approve the
+                connection in Phantom or Solflare.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
