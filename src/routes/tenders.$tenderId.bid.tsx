@@ -109,7 +109,7 @@ function SubmitBidPage() {
   }
 
   const { tender, meta } = data;
-  const biddingClosed = tender.status !== "Open" || Date.now() > tender.deadline;
+  const biddingClosed = tender.status !== "Open";
 
   const submit = async () => {
     if (biddingClosed) {
