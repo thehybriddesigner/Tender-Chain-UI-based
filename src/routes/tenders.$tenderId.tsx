@@ -16,7 +16,7 @@ import {
   Users,
   ShieldCheck,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge, CountdownTimer } from "@/components/tender/status-badge";
 import { ScoringFormulaWidget } from "@/components/tender/scoring-formula-widget";
@@ -170,18 +170,13 @@ function TenderDetail() {
 
           {isOpen && (
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button
-                size="lg"
-                type="button"
-                onClick={() =>
-                  navigate({
-                    to: "/tenders/$tenderId/bid",
-                    params: { tenderId: tender.tenderId },
-                  })
-                }
+              <Link
+                to="/tenders/$tenderId/bid"
+                params={{ tenderId: tender.tenderId }}
+                className={buttonVariants({ size: "lg" })}
               >
                 Submit Bid <ArrowRight className="ml-1 size-4" />
-              </Button>
+              </Link>
               <Button asChild variant="outline" size="lg">
                 <Link to="/tenders/$tenderId/audit" params={{ tenderId: tender.tenderId }}>
                   <ScrollText className="mr-1 size-4" /> View audit log
