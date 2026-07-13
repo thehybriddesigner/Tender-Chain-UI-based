@@ -96,6 +96,7 @@ function TenderDetail() {
   const { tender, meta, bids, audits } = data;
   const bidCount = bids.length;
   const isOpen = tender.status === "Open";
+  const canBid = isOpen && Date.now() <= tender.deadline;
   const winnerBid = tender.winner ? bids.find((b) => b.bidder === tender.winner) : null;
 
   const setTab = (t: Tab) =>
@@ -170,10 +171,18 @@ function TenderDetail() {
 
           {isOpen && (
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg">
-                <Link to="/tenders/$tenderId/bid" params={{ tenderId: tender.tenderId }}>
-                  Submit Bid <ArrowRight className="ml-1 size-4" />
-                </Link>
+              <Button
+                size="lg"
+                type="button"
+                disabled={!canBid}
+                onClick={() =>
+                  navigate({
+                    to: "/tenders/$tenderId/bid",
+                    params: { tenderId: tender.tenderId },
+                  })
+                }
+              >
+                {canBid ? "Submit Bid" : "Bidding closed"} <ArrowRight className="ml-1 size-4" />
               </Button>
               <Button asChild variant="outline" size="lg">
                 <Link to="/tenders/$tenderId/audit" params={{ tenderId: tender.tenderId }}>

@@ -85,7 +85,7 @@ function PublishTenderPage() {
           description: f.description,
           priceWeight: f.priceWeight,
           timelineWeight: f.timelineWeight,
-          deadline: Date.now() + 10 * 60 * 1000, // TEMP: 2 minutes, for testing only — revert before demo
+          deadline: Date.now() + f.biddingDays * DAY_MS,
 	  meta: {
             department: f.department,
             category: f.category,
