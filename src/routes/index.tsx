@@ -82,7 +82,7 @@ function LandingPage() {
         <div className="pointer-events-none absolute left-1/2 top-0 h-px w-[80%] -translate-x-1/2 bg-gradient-to-r from-transparent via-primary/40 to-transparent" aria-hidden />
         <div className="relative mx-auto grid w-full max-w-7xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:py-28">
           <motion.div
-            initial={{ opacity: 0, y: 24 }}
+            initial={false}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
           >
@@ -122,7 +122,7 @@ function LandingPage() {
             </div>
           </motion.div>
           <motion.div
-            initial={{ opacity: 0, y: 32, scale: 0.98 }}
+            initial={false}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
@@ -366,7 +366,7 @@ function HeroDashboardMock() {
           ].map((row, i) => (
             <motion.div
               key={row.name}
-              initial={{ opacity: 0, x: 12 }}
+              initial={false}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 + i * 0.12, duration: 0.4 }}
               className={

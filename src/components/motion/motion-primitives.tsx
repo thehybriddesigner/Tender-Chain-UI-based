@@ -30,7 +30,7 @@ interface FadeInProps extends HTMLMotionProps<"div"> {
 export function FadeIn({ delay = 0, y = 16, once = true, children, ...rest }: FadeInProps) {
   return (
     <motion.div
-      initial={{ opacity: 0, y }}
+      initial={false}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once, margin: "-60px" }}
       transition={{ duration: 0.55, ease: EASE, delay }}
@@ -56,7 +56,7 @@ export function StaggerGroup({
     <motion.div
       className={className}
       variants={stagger(delay)}
-      initial="hidden"
+      initial={false}
       whileInView="show"
       viewport={{ once, margin: "-40px" }}
     >
