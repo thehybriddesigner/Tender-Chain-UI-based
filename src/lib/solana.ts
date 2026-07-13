@@ -3,7 +3,7 @@
 // instance that tender-service.ts uses to make real on-chain calls.
 
 import { Connection, PublicKey, SystemProgram, clusterApiUrl } from "@solana/web3.js";
-import anchor from "@coral-xyz/anchor";
+import * as anchor from "@coral-xyz/anchor";
 import type { Program } from "@coral-xyz/anchor";
 import type { Wallet } from "@coral-xyz/anchor/dist/cjs/provider";
 import idl from "./tender_tracker.json"; // <-- paste the real IDL file here, same folder
