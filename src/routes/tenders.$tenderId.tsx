@@ -1,5 +1,5 @@
 import * as React from "react";
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useNavigate, useMatchRoute } from "@tanstack/react-router";
 import { PublicKey } from "@solana/web3.js";
 import {
   Building2,
@@ -62,8 +62,21 @@ export const Route = createFileRoute("/tenders/$tenderId")({
       </Button>
     </div>
   ),
-  component: TenderDetail,
+  component: TenderDetailLayout,
 });
+
+function TenderDetailLayout() {
+  const matchRoute = useMatchRoute();
+  const hasChildRoute =
+    matchRoute({ to: "/tenders/$tenderId/bid", fuzzy: true }) ||
+    matchRoute({ to: "/tenders/$tenderId/audit", fuzzy: true });
+
+  if (hasChildRoute) {
+    return <Outlet />;
+  }
+
+  return <TenderDetail />;
+}
 
 function TenderDetail() {
   const { tenderId } = Route.useParams();
